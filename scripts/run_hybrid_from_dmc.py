@@ -113,7 +113,7 @@ def main() -> None:
     p.add_argument("--out-dir", required=True)
     p.add_argument("--assembler", required=True, choices=["metaSPAdes", "metaFlye"])
     p.add_argument("--contig-base", required=True, help="Assembly FASTA basename (e.g. scaffolds.fasta or assembly.fasta)")
-    p.add_argument("--fourcac-script", default="/nfsd/bcb/bcbg/tools/4CAC/classify_4CAC.py")
+    p.add_argument("--fourcac-script", default="tools/4CAC/classify_4CAC.py")
     p.add_argument("--fourcac-env", default="4cac")
     p.add_argument("--temperature", type=float, default=1.0)
     p.add_argument("--anchor-threshold", type=float, default=0.60)

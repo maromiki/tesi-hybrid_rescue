@@ -17,19 +17,19 @@ Ambiente Python con: `numpy`, `pandas`, `scikit-learn`.
 ### 1) Baseline
 ```bash
 python scripts/hybrid_dmc_4cac.py compare-baseline \
-  --c4-file /nfsd/bcb/bcbg/marongiumi/output/4cac/sharon/4CAC_classification.fasta \
-  --dmc-file /nfsd/bcb/bcbg/marongiumi/output/dmc/sharon/scaffolds/scaffolds.fasta_pred_one-hot_hybrid.tsv \
-  --gt-file /nfsd/bcb/bcbg/marongiumi/output/sharon/sharon_ground_truth.csv \
+  --c4-file data/output/4cac/sharon/4CAC_classification.fasta \
+  --dmc-file data/output/dmc/sharon/scaffolds/scaffolds.fasta_pred_one-hot_hybrid.tsv \
+  --gt-file data/output/sharon/sharon_ground_truth.csv \
   --output-dir results/baseline
 ```
 
 ### 2) Ricerca soglia anchor
 ```bash
 python scripts/hybrid_dmc_4cac.py grid-search \
-  --dmc-file /nfsd/bcb/bcbg/marongiumi/output/dmc/sharon/scaffolds/scaffolds.fasta_pred_one-hot_hybrid.tsv \
-  --gfa-file /nfsd/bcb/bcbg/marongiumi/output/metaspades/sharon/assembly_graph_with_scaffolds.gfa \
-  --paths-file /nfsd/bcb/bcbg/marongiumi/output/metaspades/sharon/scaffolds.paths \
-  --gt-file /nfsd/bcb/bcbg/marongiumi/output/sharon/sharon_ground_truth.csv \
+  --dmc-file data/output/dmc/sharon/scaffolds/scaffolds.fasta_pred_one-hot_hybrid.tsv \
+  --gfa-file data/output/metaspades/sharon/assembly_graph_with_scaffolds.gfa \
+  --paths-file data/output/metaspades/sharon/scaffolds.paths \
+  --gt-file data/output/sharon/sharon_ground_truth.csv \
   --output-dir results/grid_search \
   --anchor-thresholds 0.55:0.95:0.05 \
   --plasmid-rescue-threshold 0.6 \
@@ -45,10 +45,10 @@ In pratica, cambiando `--anchor-thresholds` si aggiornano i campi diagnostici (`
 ### 3) Run finale con soglia ottima
 ```bash
 python scripts/hybrid_dmc_4cac.py run \
-  --dmc-file /nfsd/bcb/bcbg/marongiumi/output/dmc/sharon/scaffolds/scaffolds.fasta_pred_one-hot_hybrid.tsv \
-  --gfa-file /nfsd/bcb/bcbg/marongiumi/output/metaspades/sharon/assembly_graph_with_scaffolds.gfa \
-  --paths-file /nfsd/bcb/bcbg/marongiumi/output/metaspades/sharon/scaffolds.paths \
-  --gt-file /nfsd/bcb/bcbg/marongiumi/output/sharon/sharon_ground_truth.csv \
+  --dmc-file data/output/dmc/sharon/scaffolds/scaffolds.fasta_pred_one-hot_hybrid.tsv \
+  --gfa-file data/output/metaspades/sharon/assembly_graph_with_scaffolds.gfa \
+  --paths-file data/output/metaspades/sharon/scaffolds.paths \
+  --gt-file data/output/sharon/sharon_ground_truth.csv \
   --output-dir results/final_model \
   --anchor-threshold <BEST> \
   --plasmid-rescue-threshold 0.6 \
@@ -60,11 +60,11 @@ python scripts/hybrid_dmc_4cac.py run \
 ### 4) Confronto strategie storiche + tuning (4 classi)
 ```bash
 python scripts/evaluate_sharon_strategies.py \
-  --gt /nfsd/bcb/bcbg/marongiumi/output/sharon/sharon_ground_truth.csv \
-  --dmc /nfsd/bcb/bcbg/marongiumi/output/dmc/sharon/scaffolds/scaffolds.fasta_pred_one-hot_hybrid.tsv \
-  --hyb /nfsd/bcb/bcbg/marongiumi/output/hybrid/sharon/4CAC_classification.fasta \
-  --c4 /nfsd/bcb/bcbg/marongiumi/output/4cac/sharon/4CAC_classification.fasta \
-  --circular /nfsd/bcb/bcbg/marongiumi/output/metaspades/sharon/circular_contigs_filtered.txt \
+  --gt data/output/sharon/sharon_ground_truth.csv \
+  --dmc data/output/dmc/sharon/scaffolds/scaffolds.fasta_pred_one-hot_hybrid.tsv \
+  --hyb data/output/hybrid/sharon/4CAC_classification.fasta \
+  --c4 data/output/4cac/sharon/4CAC_classification.fasta \
+  --circular data/output/metaspades/sharon/circular_contigs_filtered.txt \
   --out results/strategy_comparison.tsv
 ```
 

@@ -157,11 +157,11 @@ def main() -> None:
     p = argparse.ArgumentParser(description="Create comparison plots for synthetic validation.")
     p.add_argument(
         "--metrics-pooled",
-        default="/nfsd/bcb/bcbg/marongiumi/thesis/finalissima/validazione/synthetic_metrics_pooled.tsv",
+        default=".validazione/synthetic_metrics_pooled.tsv",
     )
     p.add_argument(
         "--out-dir",
-        default="/nfsd/bcb/bcbg/marongiumi/thesis/finalissima/validazione/plots",
+        default=".validazione/plots",
     )
     args = p.parse_args()
 

@@ -349,12 +349,12 @@ def main() -> None:
     p = argparse.ArgumentParser(description="Validation DMC vs 4CAC vs Hybrid on synthetic datasets.")
     p.add_argument(
         "--root",
-        default="/nfsd/bcb/bcbg/marongiumi",
+        default="data",
         help="Workspace root that contains output/* folders.",
     )
     p.add_argument(
         "--out-dir",
-        default="/nfsd/bcb/bcbg/marongiumi/thesis/finalissima/validazione",
+        default=".validazione",
         help="Output folder for validation results.",
     )
     args = p.parse_args()

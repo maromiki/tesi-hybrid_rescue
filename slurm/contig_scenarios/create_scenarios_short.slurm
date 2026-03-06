@@ -5,13 +5,13 @@
 #SBATCH --cpus-per-task=2
 #SBATCH --mem=8G
 #SBATCH --time=01:00:00
-#SBATCH --output=/nfsd/bcb/bcbg/marongiumi/thesis/finalissima/slurm/contig_scenarios/logs/%x_%j.out
-#SBATCH --error=/nfsd/bcb/bcbg/marongiumi/thesis/finalissima/slurm/contig_scenarios/logs/%x_%j.err
+#SBATCH --output=.slurm/contig_scenarios/logs/%x_%j.out
+#SBATCH --error=.slurm/contig_scenarios/logs/%x_%j.err
 
 set -euo pipefail
 
-PY="/nfsd/bcb/bcbg/marongiumi/miniconda3/envs/thesis_env/bin/python"
-BASE="/nfsd/bcb/bcbg/marongiumi/thesis/finalissima"
+PY="data/miniconda3/envs/thesis_env/bin/python"
+BASE="data/thesis/finalissima"
 RUN="${BASE}/validazione/camisim_contig_scenarios/runs/short"
 
 "${PY}" "${BASE}/scripts/create_camisim_contig_scenarios.py" \

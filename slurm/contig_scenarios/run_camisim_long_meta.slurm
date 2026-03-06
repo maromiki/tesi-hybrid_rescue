@@ -5,12 +5,12 @@
 #SBATCH --cpus-per-task=12
 #SBATCH --mem=80G
 #SBATCH --time=48:00:00
-#SBATCH --output=/nfsd/bcb/bcbg/marongiumi/thesis/finalissima/slurm/contig_scenarios/logs/%x_%j.out
-#SBATCH --error=/nfsd/bcb/bcbg/marongiumi/thesis/finalissima/slurm/contig_scenarios/logs/%x_%j.err
+#SBATCH --output=.slurm/contig_scenarios/logs/%x_%j.out
+#SBATCH --error=.slurm/contig_scenarios/logs/%x_%j.err
 
 set -euo pipefail
 
-source /nfsd/bcb/bcbg/marongiumi/miniconda3/etc/profile.d/conda.sh
+source data/miniconda3/etc/profile.d/conda.sh
 conda activate camisim
 
 # CAMISIM/Nextflow crea env Conda dinamici; con channel_priority strict
@@ -18,10 +18,10 @@ conda activate camisim
 conda config --set channel_priority flexible
 export CONDA_CHANNEL_PRIORITY=flexible
 
-CAMISIM_DIR="/nfsd/bcb/bcbg/tools/CAMISIM"
-DATASET_DIR="/nfsd/bcb/bcbg/marongiumi/dataset/camisim"
-SLURM_CAMI_DIR="/nfsd/bcb/bcbg/marongiumi/slurm/camisim"
-OUT_DIR="/nfsd/bcb/bcbg/marongiumi/thesis/finalissima/validazione/camisim_contig_scenarios/runs/long/camisim"
+CAMISIM_DIR="tools/CAMISIM"
+DATASET_DIR="data/dataset/camisim"
+SLURM_CAMI_DIR="data/slurm/camisim"
+OUT_DIR=".validazione/camisim_contig_scenarios/runs/long/camisim"
 DIST_FILE="${DATASET_DIR}/distribution_0.txt"
 SCRATCH_ROOT="/ext/${USER}/finalissima_camisim_long_${SLURM_JOB_ID}"
 WORK_DIR="${SCRATCH_ROOT}/nxf_work"
@@ -30,7 +30,7 @@ TMP_OUT_DIR="${SCRATCH_ROOT}/camisim_out"
 mkdir -p "${OUT_DIR}"
 mkdir -p "${WORK_DIR}"
 mkdir -p "${TMP_OUT_DIR}"
-mkdir -p "/nfsd/bcb/bcbg/marongiumi/thesis/finalissima/slurm/contig_scenarios/logs"
+mkdir -p ".slurm/contig_scenarios/logs"
 
 nextflow run "${CAMISIM_DIR}/main.nf" \
   -c "${SLURM_CAMI_DIR}/custom_nanosim.config" \

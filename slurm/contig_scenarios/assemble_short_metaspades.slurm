@@ -5,14 +5,14 @@
 #SBATCH --cpus-per-task=16
 #SBATCH --mem=128G
 #SBATCH --time=48:00:00
-#SBATCH --output=/nfsd/bcb/bcbg/marongiumi/thesis/finalissima/slurm/contig_scenarios/logs/%x_%j.out
-#SBATCH --error=/nfsd/bcb/bcbg/marongiumi/thesis/finalissima/slurm/contig_scenarios/logs/%x_%j.err
+#SBATCH --output=.slurm/contig_scenarios/logs/%x_%j.out
+#SBATCH --error=.slurm/contig_scenarios/logs/%x_%j.err
 
 set -euo pipefail
 
-READS="/nfsd/bcb/bcbg/marongiumi/thesis/finalissima/validazione/camisim_contig_scenarios/runs/short/camisim/sample_0/reads/anonymous_reads.fq.gz"
-OUT_DIR="/nfsd/bcb/bcbg/marongiumi/thesis/finalissima/validazione/camisim_contig_scenarios/runs/short/assembly_metaspades"
-METASPADES="/nfsd/bcb/bcbg/tools/metaSPAdes/SPAdes-4.2.0-Linux/bin/metaspades.py"
+READS=".validazione/camisim_contig_scenarios/runs/short/camisim/sample_0/reads/anonymous_reads.fq.gz"
+OUT_DIR=".validazione/camisim_contig_scenarios/runs/short/assembly_metaspades"
+METASPADES="tools/metaSPAdes/SPAdes-4.2.0-Linux/bin/metaspades.py"
 SCRATCH="/ext/${USER}/metaspades_${SLURM_JOB_ID}"
 
 mkdir -p "${OUT_DIR}"

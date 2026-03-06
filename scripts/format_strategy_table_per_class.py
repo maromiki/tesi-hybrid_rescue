@@ -2,7 +2,7 @@
 from pathlib import Path
 import pandas as pd
 
-base = Path('/nfsd/bcb/bcbg/marongiumi/thesis/finalissima/results')
+base = Path('.results')
 src_tsv = base / 'strategy_comparison.tsv'
 full = base / 'strategy_comparison_full.tsv'
 out_tsv = base / 'strategy_comparison.tsv'

@@ -1,4 +1,24 @@
 #!/usr/bin/env python3
+"""
+Modello Ibrido DeepMicroClass + 4CAC
+======================================
+
+Questo script implementa il modello ibrido finale.
+L'idea chiave e' usare le predizioni probabilistiche (logit) di DeepMicroClass
+(DMC) come punto di partenza, mappandole sulle 4 classi principali (Virus,
+Plasmid, Bacteria, Eukaryota). 
+Queste probabilità vengono poi iniettate nel grafo di assemblaggio fornito da 
+metaSPAdes (tramite le path dei contig sui nodi del grafo).
+
+Successivamente, si applica un meccanismo di propagazione topologica ispirato a 4CAC:
+- I contig con confidenza alta (anchors) passano la loro label hard ai nodi;
+- I nodi non classificati vengono risolti mediante un processo iterativo 
+  di smooth/propagation basato sul consenso dei vicini nel grafo;
+- Un passaggio finale di "Plasmid Rescue" permette di recuperare plasmidi 
+  isolati con punteggi favorevoli ma sotto una soglia meno restrittiva.
+
+"""
+
 import argparse
 import json
 import math

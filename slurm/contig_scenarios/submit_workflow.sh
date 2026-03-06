@@ -1,7 +1,7 @@
 #!/bin/bash
 set -euo pipefail
 
-BASE="/nfsd/bcb/bcbg/marongiumi/thesis/finalissima/slurm/contig_scenarios"
+BASE=".slurm/contig_scenarios"
 mkdir -p "${BASE}/logs"
 
 # SHORT branch

@@ -5,16 +5,16 @@
 #SBATCH --cpus-per-task=16
 #SBATCH --mem=80G
 #SBATCH --time=36:00:00
-#SBATCH --output=/nfsd/bcb/bcbg/marongiumi/thesis/finalissima/slurm/contig_scenarios/logs/%x_%j.out
-#SBATCH --error=/nfsd/bcb/bcbg/marongiumi/thesis/finalissima/slurm/contig_scenarios/logs/%x_%j.err
+#SBATCH --output=.slurm/contig_scenarios/logs/%x_%j.out
+#SBATCH --error=.slurm/contig_scenarios/logs/%x_%j.err
 
 set -euo pipefail
 
-source /nfsd/bcb/bcbg/marongiumi/miniconda3/etc/profile.d/conda.sh
+source data/miniconda3/etc/profile.d/conda.sh
 conda activate flye
 
-READS="/nfsd/bcb/bcbg/marongiumi/thesis/finalissima/validazione/camisim_contig_scenarios/runs/long/camisim/sample_0/reads/anonymous_reads.fq.gz"
-OUT_DIR="/nfsd/bcb/bcbg/marongiumi/thesis/finalissima/validazione/camisim_contig_scenarios/runs/long/assembly_flye"
+READS=".validazione/camisim_contig_scenarios/runs/long/camisim/sample_0/reads/anonymous_reads.fq.gz"
+OUT_DIR=".validazione/camisim_contig_scenarios/runs/long/assembly_flye"
 SCRATCH="/ext/${USER}/flye_${SLURM_JOB_ID}"
 
 mkdir -p "${OUT_DIR}" "${SCRATCH}"

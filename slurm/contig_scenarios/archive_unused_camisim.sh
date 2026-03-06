@@ -46,15 +46,15 @@ aarchive() {
 }
 
 # Priority: biggest and less critical for the current new run
-aarchive "/nfsd/bcb/bcbg/marongiumi/dataset/camisim/simulation_short_biased"
-aarchive "/nfsd/bcb/bcbg/marongiumi/dataset/camisim/simulation_long_biased"
-aarchive "/nfsd/bcb/bcbg/marongiumi/output/minimap2/camisim"
-aarchive "/nfsd/bcb/bcbg/marongiumi/output/sga/camisim"
-aarchive "/nfsd/bcb/bcbg/marongiumi/output/metaspades/camisim"
-aarchive "/nfsd/bcb/bcbg/marongiumi/output/flye/camisim"
-aarchive "/nfsd/bcb/bcbg/marongiumi/output/ground_truth/camisim"
-aarchive "/nfsd/bcb/bcbg/marongiumi/output/4cac/camisim"
-aarchive "/nfsd/bcb/bcbg/marongiumi/output/dmc/camisim"
-aarchive "/nfsd/bcb/bcbg/marongiumi/output/hybrid/camisim"
+aarchive "data/dataset/camisim/simulation_short_biased"
+aarchive "data/dataset/camisim/simulation_long_biased"
+aarchive "data/output/minimap2/camisim"
+aarchive "data/output/sga/camisim"
+aarchive "data/output/metaspades/camisim"
+aarchive "data/output/flye/camisim"
+aarchive "data/output/ground_truth/camisim"
+aarchive "data/output/4cac/camisim"
+aarchive "data/output/dmc/camisim"
+aarchive "data/output/hybrid/camisim"
 
 echo "All archive tasks completed at $(date '+%F %T')" | tee -a "$LOG_FILE"

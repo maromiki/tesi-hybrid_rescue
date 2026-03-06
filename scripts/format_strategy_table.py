@@ -3,9 +3,9 @@ from pathlib import Path
 
 import pandas as pd
 
-p = Path('/nfsd/bcb/bcbg/marongiumi/thesis/finalissima/results/strategy_comparison.tsv')
-full = Path('/nfsd/bcb/bcbg/marongiumi/thesis/finalissima/results/strategy_comparison_full.tsv')
-md = Path('/nfsd/bcb/bcbg/marongiumi/thesis/finalissima/results/strategy_comparison.md')
+p = Path('.results/strategy_comparison.tsv')
+full = Path('.results/strategy_comparison_full.tsv')
+md = Path('.results/strategy_comparison.md')
 
 df = pd.read_csv(p, sep='\t')
 df.to_csv(full, sep='\t', index=False)
