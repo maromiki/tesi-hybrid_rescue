@@ -1,0 +1,8 @@
+model	accuracy_%	f1_macro_%	f1_bacteria_%	f1_eukaryota_%	f1_plasmid_%	f1_virus_%
+best_tuned_accuracy	82.19	53.39	88.18	92.23	26.51	6.64
+pred_hyb	82.06	52.28	88.18	92.23	21.55	7.18
+pred_hybrid_rescue	80.39	57.85	86.33	92.23	45.67	7.18
+pred_circular_rescue	80.39	57.85	86.33	92.23	45.67	7.18
+pred_hierarchical	75.6	55.65	81.97	88.0	45.4	7.24
+pred_4cac	72.9	48.61	80.94	86.88	19.35	7.24
+pred_dmc	47.55	45.92	52.33	85.8	43.44	2.12

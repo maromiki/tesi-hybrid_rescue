@@ -1,0 +1,14 @@
+dataset	total_contigs	known_contigs_4class	unknown_contigs	Bacteria	Eukaryota	Plasmid	Virus
+sharon_full_dataset	3992	3992	0	2829	923	183	57
+synthetic_long_bacteria_dominant_70	52	52	0	37	5	5	5
+synthetic_long_balanced_25_25_25_25	52	52	0	13	13	13	13
+synthetic_long_eukaryota_rich_55	52	52	0	10	29	5	8
+synthetic_long_full_assembly	2546	1180	1366	416	727	24	13
+synthetic_long_plasmid_spike_30	52	52	0	21	8	15	8
+synthetic_long_virus_spike_25	52	52	0	21	8	10	13
+synthetic_short_bacteria_dominant_55	280	280	0	154	56	42	28
+synthetic_short_balanced_25_25_25_25	280	280	0	70	70	70	70
+synthetic_short_eukaryota_rich_50	280	280	0	56	140	42	42
+synthetic_short_full_assembly	42677	24772	17905	7450	16898	354	70
+synthetic_short_plasmid_spike_30	280	280	0	98	56	84	42
+synthetic_short_virus_spike_25	280	280	0	98	56	56	70

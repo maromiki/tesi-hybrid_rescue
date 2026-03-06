@@ -1,0 +1,50 @@
+{
+  "total_contigs": 280,
+  "scenarios": [
+    {
+      "name": "balanced_25_25_25_25",
+      "fractions": {
+        "Bacteria": 0.25,
+        "Eukaryota": 0.25,
+        "Plasmid": 0.25,
+        "Virus": 0.25
+      }
+    },
+    {
+      "name": "bacteria_dominant_55",
+      "fractions": {
+        "Bacteria": 0.55,
+        "Eukaryota": 0.20,
+        "Plasmid": 0.15,
+        "Virus": 0.10
+      }
+    },
+    {
+      "name": "eukaryota_rich_50",
+      "fractions": {
+        "Bacteria": 0.20,
+        "Eukaryota": 0.50,
+        "Plasmid": 0.15,
+        "Virus": 0.15
+      }
+    },
+    {
+      "name": "virus_spike_25",
+      "fractions": {
+        "Bacteria": 0.35,
+        "Eukaryota": 0.20,
+        "Plasmid": 0.20,
+        "Virus": 0.25
+      }
+    },
+    {
+      "name": "plasmid_spike_30",
+      "fractions": {
+        "Bacteria": 0.35,
+        "Eukaryota": 0.20,
+        "Plasmid": 0.30,
+        "Virus": 0.15
+      }
+    }
+  ]
+}

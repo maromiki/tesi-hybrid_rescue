@@ -1,0 +1,4 @@
+dataset	delta_precision_macro	delta_recall_macro	delta_f1_macro	delta_precision_plasmid	delta_recall_plasmid	delta_f1_plasmid
+cami_i_high	0.0	-0.021784372913237315	-0.011430536217073711	0.0	0.0	0.0
+cami_ii_marine	1.4475270642799742e-05	-0.01226104187955171	-0.007139502111220997	0.0001008001984988	0.0068674062334918	0.0001986840999228
+camisim	0.0	0.0	0.0	0.0	0.0	0.0
