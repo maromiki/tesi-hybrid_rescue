@@ -3,7 +3,7 @@
 Architettura ibrida che combina le predizioni basate sul Deep Learning di DeepMicroClass con la propagazione delle etichette dell'algoritmo di 4CAC. Sono state applicate delle modifiche al meccanismo di propagazione, usando le Soft Labels di DMC direttamente nel grafo, ed è stata implementata l'euristica di recupero plasmidico.
 
 ## Struttura
-- `scripts/hybrid_dmc_4cac.py`: pipeline completa + grid search + confronto baseline.
+- `scripts/hybrid_dmc_4cac.py`: architettura completa + grid search + confronto baseline.
 - `config/sharon_paths.json`: percorsi input Sharon.
 - `docs/TOOL_ANALYSIS.md`: sintesi tecnica DMC/4CAC e integrazione.
 - `results/`: output di validazione.
