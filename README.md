@@ -1,8 +1,6 @@
-# finalissima - Hybrid DMC + 4CAC (Sharon)
+# Modello Hybrid + Rescue
 
-Pipeline riproducibile per combinare predizioni probabilistiche di DeepMicroClass con propagazione topologica stile 4CAC.
-
-Nota sul comportamento corrente: i contig sotto soglia anchor ("incerti") non vengono uniformati a `0.25/0.25/0.25/0.25`; anche per loro viene mantenuto il vettore di probabilità originale prodotto da DMC.
+Architettura ibrida che combina le predizioni basate sul Deep Learning di DeepMicroClass con la propagazione delle etichette dell'algoritmo di 4CAC. Sono state applicate delle modifiche al meccanismo di propagazione, usando le Soft Labels di DMC direttamente nel grafo, ed è stata implementata l'euristica di recupero plasmidico.
 
 ## Struttura
 - `scripts/hybrid_dmc_4cac.py`: pipeline completa + grid search + confronto baseline.
