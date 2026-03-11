@@ -1,18 +1,39 @@
-# Modello Hybrid + Rescue
+# Hybrid + Rescue: Classificazione Metagenomica Multiclasse
 
-Architettura ibrida che combina le predizioni basate sul Deep Learning di DeepMicroClass con la propagazione delle etichette dell'algoritmo di 4CAC. Sono state applicate delle modifiche al meccanismo di propagazione, usando le Soft Labels di DMC direttamente nel grafo, ed è stata implementata l'euristica di recupero plasmidico.
+Questo repository contiene il codice sorgente per il modello computazionale **Hybrid + Rescue**, sviluppato per migliorare la classificazione simultanea degli elementi genetici mobili (plasmidi e virus) nei campioni metagenomici.
 
-## Struttura
-- `scripts/hybrid_dmc_4cac.py`: architettura completa + grid search + confronto baseline.
-- `config/sharon_paths.json`: percorsi input Sharon.
-- `docs/TOOL_ANALYSIS.md`: sintesi tecnica DMC/4CAC e integrazione.
-- `results/`: output di validazione.
+Il progetto supera i limiti intrinseci degli strumenti attuali combinando due paradigmi ortogonali:
+1. L'estrazione semantica profonda tramite **DeepMicroClass (DMC)**.
+2. La propagazione topologica su grafo di assemblaggio tramite il motore di **4CAC**.
 
-## Requisiti
-Ambiente Python con: `numpy`, `pandas`, `scikit-learn`.
+A questa architettura è integrata un'euristica originale, denominata **Plasmid Rescue**, progettata per recuperare sistematicamente i *contig* plasmidici che, a causa della loro conformazione circolare (nodi isolati nel grafo), verrebbero persi dai vincoli rigidi della propagazione spaziale.
 
-## Esecuzione
-### 1) Baseline
+## 🗂️ Struttura del Repository
+
+- `scripts/`: Codice sorgente principale.
+  - `hybrid_dmc_4cac.py`: Core dell'architettura (integrazione DMC-4CAC, calcolo metriche, implementazione *Plasmid Rescue*).
+  - `evaluate_sharon_strategies.py`: Script per il benchmarking sul dataset ambientale.
+- `config/`: File JSON di configurazione per i percorsi di input (es. `sharon_paths.json`).
+- `docs/TOOL_ANALYSIS.md`: Analisi e sintesi tecnica dell'integrazione tra DMC e 4CAC.
+- `results/`: Directory di destinazione per gli output di validazione e inferenza.
+- `slurm/`: Script bash per l'esecuzione distribuita su cluster HPC.
+
+## ⚙️ Requisiti e Installazione
+
+Il progetto è sviluppato in Python. Si raccomanda l'utilizzo di un ambiente virtuale (es. Conda).
+
+**Dipendenze principali:**
+- `numpy`
+- `pandas`
+- `scikit-learn`
+- Ambiente configurato per l'esecuzione di **4CAC** (indicabile tramite il flag `--fourcac-env`).
+
+## 🚀 Utilizzo ed Esecuzione
+
+Lo script principale `hybrid_dmc_4cac.py` gestisce l'intera pipeline. Di seguito i comandi per i flussi di lavoro principali.
+
+### 1. Confronto Baseline (4CAC vs DMC)
+Valuta le prestazioni isolate dei due modelli di base prima dell'integrazione ibrida.
 ```bash
 python scripts/hybrid_dmc_4cac.py compare-baseline \
   --c4-file data/output/4cac/sharon/4CAC_classification.fasta \
@@ -21,7 +42,8 @@ python scripts/hybrid_dmc_4cac.py compare-baseline \
   --output-dir results/baseline
 ```
 
-### 2) Ricerca soglia anchor
+### 2. Ottimizzazione Parametri (Grid Search)
+Esegue una ricerca per valutare l'impatto delle soglie diagnostiche sulle metriche di classificazione.
 ```bash
 python scripts/hybrid_dmc_4cac.py grid-search \
   --dmc-file data/output/dmc/sharon/scaffolds/scaffolds.fasta_pred_one-hot_hybrid.tsv \
@@ -29,18 +51,16 @@ python scripts/hybrid_dmc_4cac.py grid-search \
   --paths-file data/output/metaspades/sharon/scaffolds.paths \
   --gt-file data/output/sharon/sharon_ground_truth.csv \
   --output-dir results/grid_search \
+  --fourcac-script path/to/4CAC/run_4CAC.py \
+  --asmdir data/output/metaspades/sharon/ \
   --anchor-thresholds 0.55:0.95:0.05 \
   --plasmid-rescue-threshold 0.6 \
-  --temperature 1.0 \
-  --alpha 0.65 \
-  --n-iter 20
+  --temperature 1.0 
 ```
+> **Nota Tecnica sull'Anchor Threshold:** Nell'implementazione finale, la propagazione sul grafo è delegata nativamente a 4CAC, che adotta una soglia di sbarramento interna severa (0.95) per le classi minoritarie. Il parametro `--anchor-threshold` serve in questa fase primariamente per la reportistica e la diagnostica (conteggio e *rate* delle ancore originali), senza forzare l'alterazione del vettore stocastico in ingresso per i nodi incerti.
 
-Con il comportamento corrente, `--anchor-thresholds` serve soprattutto per analisi/reportistica (conteggio/rate degli anchor), mentre l'input probabilistico verso 4CAC resta quello originale di DMC anche per i contig incerti.
-
-In pratica, cambiando `--anchor-thresholds` si aggiornano i campi diagnostici (`anchors_n`, `anchors_rate`) ma non viene più applicata alcuna riscrittura dei punteggi per i contig incerti.
-
-### 3) Run finale con soglia ottima
+### 3. Run Finale con Architettura Ibrida
+Esecuzione diretta del modello con la soglia di soccorso ottimizzata ($\theta_{rescue} = 0.60$).
 ```bash
 python scripts/hybrid_dmc_4cac.py run \
   --dmc-file data/output/dmc/sharon/scaffolds/scaffolds.fasta_pred_one-hot_hybrid.tsv \
@@ -48,56 +68,37 @@ python scripts/hybrid_dmc_4cac.py run \
   --paths-file data/output/metaspades/sharon/scaffolds.paths \
   --gt-file data/output/sharon/sharon_ground_truth.csv \
   --output-dir results/final_model \
-  --anchor-threshold <BEST> \
+  --fourcac-script path/to/4CAC/run_4CAC.py \
+  --asmdir data/output/metaspades/sharon/ \
+  --anchor-threshold 0.80 \
   --plasmid-rescue-threshold 0.6 \
-  --temperature 1.0 \
-  --alpha 0.65 \
-  --n-iter 20
+  --temperature 1.0
 ```
 
-### 4) Confronto strategie storiche + tuning (4 classi)
-```bash
-python scripts/evaluate_sharon_strategies.py \
-  --gt data/output/sharon/sharon_ground_truth.csv \
-  --dmc data/output/dmc/sharon/scaffolds/scaffolds.fasta_pred_one-hot_hybrid.tsv \
-  --hyb data/output/hybrid/sharon/4CAC_classification.fasta \
-  --c4 data/output/4cac/sharon/4CAC_classification.fasta \
-  --circular data/output/metaspades/sharon/circular_contigs_filtered.txt \
-  --out results/strategy_comparison.tsv
-```
+## 📊 Output Principali
 
-## Output principali
-- `predictions_hybrid.tsv`: classe finale per contig.
-- `node_state.tsv`: stato nodi (label + probabilità propagate).
-- `metrics_hybrid.tsv`: metriche complete su Sharon + campi diagnostici `anchors_n`, `anchors_rate` e `rescued_plasmids`.
-- `grid_search_summary.tsv`: confronto configurazioni; con la logica corrente è utile soprattutto per tracciare diagnostica anchor, non per forzare uniformazione dei contig incerti.
-- `strategy_comparison.tsv`: confronto completo su 4 classi tra baseline e strategie ibride.
-- `predictions_best_tuned.tsv`: predizioni del modello ottimizzato per accuracy.
-- `best_tuned_config.tsv`: soglie ottime del tuning.
+Al termine dell'esecuzione, la directory di output conterrà i seguenti file:
+- `predictions_hybrid.tsv`: L'etichetta tassonomica finale assegnata a ciascun *contig*.
+- `dmc_probabilities.tsv`: I vettori Softmax normalizzati estratti da DeepMicroClass.
+- `metrics_hybrid.tsv`: Risultati prestazionali (Precision, Recall, F1-score globali e per singola classe) e dati diagnostici (`anchors_n`, `rescued_plasmids`).
+- `grid_search_summary.tsv` *(solo in modalità grid-search)*: Tabella comparativa delle configurazioni testate.
 
-## Workflow CAMISIM contig-level (short vs long)
-Per benchmark controllati su **contig** (non su reads), con simulazione e assemblaggio in SLURM:
+## 🧬 Riproducibilità: Workflow CAMISIM (Short vs Long reads)
 
-- Config scenari: `config/camisim_contig_scenarios_1000.json`
-- Script creazione subset contig: `scripts/create_camisim_contig_scenarios.py`
-- Script valutazione scenari: `scripts/evaluate_camisim_contig_scenarios.py`
-- Plot scenari: `scripts/plot_camisim_contig_scenarios.py`
-- Hybrid da output DMC: `scripts/run_hybrid_from_dmc.py`
-- SLURM pipeline completa: `slurm/contig_scenarios/submit_workflow.sh`
+Il repository include l'infrastruttura per replicare i test su metagenomi simulati in *silico*, al fine di valutare la robustezza del modello su tecnologie di sequenziamento di seconda e terza generazione.
 
-La pipeline genera due rami separati:
-- **short**: CAMISIM metagenomico (`art`) + assembly con `metaSPAdes --meta`
-- **long**: CAMISIM metagenomico (`nanosim3`) + assembly con `Flye --meta`
+La pipeline è gestita tramite script **SLURM** e genera due rami di analisi:
+- **Ramo Short-read:** Simulazione metagenomica con `ART` e assemblaggio tramite `metaSPAdes --meta`.
+- **Ramo Long-read:** Simulazione tramite `NanoSim3` e assemblaggio con `Flye --meta`.
 
-Output principali in:
-- `validazione/camisim_contig_scenarios/runs/short/`
-- `validazione/camisim_contig_scenarios/runs/long/`
-- `validazione/camisim_contig_scenarios/results_short/`
-- `validazione/camisim_contig_scenarios/results_long/`
-- `validazione/camisim_contig_scenarios/plots_short/`
-- `validazione/camisim_contig_scenarios/plots_long/`
-
-Avvio:
+**Avvio della pipeline su cluster:**
 ```bash
 bash slurm/contig_scenarios/submit_workflow.sh
 ```
+
+I risultati, comprensivi di grafici comparativi per i vari scenari ecologici (dominanza batterica, bilanciato, arricchimento virale/plasmidico), verranno salvati in:
+- `validazione/camisim_contig_scenarios/results_short/` (e relativi grafici in `plots_short/`)
+- `validazione/camisim_contig_scenarios/results_long/` (e relativi grafici in `plots_long/`)
+
+---
+*Lavoro sviluppato come tesi per il Corso di Laurea Magistrale in Biotecnologie Industriali, Università degli Studi di Padova (A.A. 2025/2026).*
