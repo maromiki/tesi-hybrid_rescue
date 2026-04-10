@@ -120,4 +120,3 @@ bash slurm/contig_scenarios/submit_workflow.sh
 
 *Project developed as the MSc Thesis for Industrial Biotechnology at the University of Padova.*
 
-***
