@@ -1,38 +1,47 @@
-# Hybrid + Rescue: classificazione metagenomica multiclasse
+# Hybrid + Rescue: Multi-class Metagenomic Classification Pipeline
 
-Questo repository contiene il codice sorgente per il modello computazionale **Hybrid + Rescue**, sviluppato per migliorare la classificazione metagenomica multiclasse.
+![Python](https://img.shields.io/badge/Python-3.8%2B-blue)
+![Data Analysis](https://img.shields.io/badge/Data%20Analysis-Pandas%20%7C%20Numpy-green)
+![HPC](https://img.shields.io/badge/HPC-SLURM-orange)
+![Biology](https://img.shields.io/badge/Domain-Metagenomics-red)
 
-Il progetto supera i limiti intrinseci degli strumenti attuali combinando due paradigmi ortogonali:
-1. L'estrazione semantica tramite **DeepMicroClass (DMC)**.
-2. La propagazione topologica su grafo di assemblaggio tramite **4CAC**.
+## 📌 Executive Summary
+This repository contains the source code for the **Hybrid + Rescue** computational model, developed to optimize multi-class metagenomic classification. 
 
-A questa architettura è integrata un'euristica originale, denominata **Plasmid Rescue**, progettata per recuperare sistematicamente i *contig* plasmidici che, a causa della loro natura di nodi isolati nel grafo, verrebbero persi dai vincoli rigidi della propagazione spaziale.
+The pipeline addresses a major bottleneck in R&D bioinformatics: the trade-off between semantic sensitivity and topological precision in assembly graphs. By integrating Convolutional Neural Networks (CNNs) via DeepMicroClass (DMC) with topological propagation via 4CAC, this architecture maximizes classification accuracy. 
 
-## Struttura del repository
+A novel biological heuristic, **Plasmid Rescue**, was designed and implemented to systematically recover plasmid contigs that are typically lost as isolated nodes in standard topological graph filtering.
 
-- `scripts/`: codice sorgente principale.
-  - `hybrid_dmc_4cac.py`: architettura (integrazione DMC-4CAC, calcolo metriche, implementazione *Plasmid Rescue*).
-  - `evaluate_sharon_strategies.py`: script per il benchmarking sul dataset ambientale.
-- `config/`: file JSON di configurazione per i percorsi di input.
-- `docs/`: analisi dei risultati sul dataset Sharon.
-- `results/`
+## 🧬 Biological Rationale & Architecture
+The system integrates two orthogonal paradigms:
+1. **Semantic Extraction:** Utilizing Softmax probability vectors from DMC.
+2. **Topological Propagation:** Mapping predictions onto the assembly graph via 4CAC.
+3. **Plasmid Rescue Heuristic:** A custom conditional algorithm to recover biologically relevant but topologically isolated circular DNA fragments.
 
-## Requisiti e installazione
+## 📂 Repository Structure
+*   `scripts/`: Core source code and Python scripts.
+    *   `hybrid_dmc_4cac.py`: Main orchestrator (CNN-Graph integration, metrics calculation, Plasmid Rescue logic).
+    *   `evaluate_sharon_strategies.py`: Benchmarking script for environmental datasets.
+*   `config/`: JSON configuration files for reproducible input paths.
+*   `docs/`: Analysis and validation reports.
+*   `results/`: Output directories for pipeline metrics.
+*   `validazione/`: HPC/SLURM scripts for scaling the pipeline on computing clusters.
 
-Il progetto è sviluppato in Python. Si raccomanda l'utilizzo di un ambiente virtuale (es. Conda).
+## ⚙️ Requirements & Installation
+It is highly recommended to run this pipeline within a virtual environment (e.g., Conda).
 
-**Dipendenze principali:**
-- `numpy`
-- `pandas`
-- `scikit-learn`
-- Ambiente configurato per l'esecuzione di **4CAC** (indicabile tramite il flag `--fourcac-env`).
+**Core Dependencies:**
+*   `numpy`
+*   `pandas`
+*   `scikit-learn`
+*   Configured environment for 4CAC (specified via `--fourcac-env` flag).
 
-## Utilizzo ed esecuzione
+## 🚀 Usage & Pipeline Execution
 
-Lo script principale `hybrid_dmc_4cac.py` gestisce l'intera architettura. Di seguito i comandi principali:
+The primary orchestrator `hybrid_dmc_4cac.py` handles the data flow. 
 
-### 1. Confronto baseline (4CAC vs DMC)
-Valuta le prestazioni isolate dei due modelli di base prima dell'integrazione ibrida.
+**1. Baseline Comparison (4CAC vs DMC)**
+Evaluates the isolated performance of the base models prior to hybrid integration.
 ```
 python scripts/hybrid_dmc_4cac.py compare-baseline \
   --c4-file data/output/4cac/sharon/4CAC_classification.fasta \
@@ -41,8 +50,8 @@ python scripts/hybrid_dmc_4cac.py compare-baseline \
   --output-dir results/baseline
 ```
 
-### 2. Ottimizzazione parametri (Grid Search)
-Esegue una ricerca per valutare l'impatto delle soglie sulle metriche di classificazione.
+**2. Parameter Optimization (Grid Search)**
+Executes a parameter sweep to assess the impact of thresholds on classification metrics.
 ```
 python scripts/hybrid_dmc_4cac.py grid-search \
   --dmc-file data/output/dmc/sharon/scaffolds/scaffolds.fasta_pred_one-hot_hybrid.tsv \
@@ -56,32 +65,21 @@ python scripts/hybrid_dmc_4cac.py grid-search \
   --plasmid-rescue-threshold 0.6 \
   --temperature 1.0 
 ```
-> **Nota:** nell'implementazione finale, la propagazione sul grafo è delegata nativamente a 4CAC, che adotta una soglia di sbarramento interna severa (0.95) per le classi minoritarie. Il parametro `--anchor-threshold` serve in questa fase primariamente per la reportistica e la diagnostica (conteggio e *rate* delle ancore originali), senza forzare l'alterazione del vettore stocastico in ingresso per i nodi incerti.
 
-## Output principali
+## 📊 Expected Outputs
+Upon successful execution, the pipeline generates:
+*   `predictions_hybrid.tsv`: Final taxonomic labels assigned to each contig.
+*   `dmc_probabilities.tsv`: Normalized Softmax vectors extracted from DMC.
+*   `metrics_hybrid.tsv`: Performance metrics (Precision, Recall, F1-score).
+*   `grid_search_summary.tsv`: Comparative table of tested configurations.
 
-Al termine dell'esecuzione, la cartella di output conterrà i seguenti file:
-- `predictions_hybrid.tsv`: l'etichetta tassonomica finale assegnata a ciascun *contig*.
-- `dmc_probabilities.tsv`: i vettori Softmax normalizzati estratti da DeepMicroClass.
-- `metrics_hybrid.tsv`: risultati prestazionali (Precision, Recall, F1-score globali e per singola classe).
-- `grid_search_summary.tsv` *(solo in modalità grid-search)*: tabella comparativa delle configurazioni testate.
+## 🖥️ HPC Cluster Deployment (SLURM)
+The repository includes the infrastructure to scale the pipeline on High-Performance Computing (HPC) clusters. It handles both short-read (metaSPAdes) and long-read (Flye) assemblies.
 
-## Riproducibilità
-
-Il repository include l'infrastruttura per replicare i test su metagenomi simulati *in silico*, al fine di valutare la robustezza del modello su tecnologie di sequenziamento di seconda e terza generazione.
-
-La pipeline è gestita tramite **SLURM** e genera due rami di analisi:
-- **Ramo Short-read:** simulazione metagenomica con `ART` e assemblaggio tramite `metaSPAdes --meta`.
-- **Ramo Long-read:** simulazione tramite `NanoSim3` e assemblaggio con `Flye --meta`.
-
-**Avvio della pipeline su cluster:**
+To submit the workflow to a SLURM cluster:
 ```
 bash slurm/contig_scenarios/submit_workflow.sh
 ```
 
-I risultati, comprensivi di grafici comparativi per i vari scenari ecologici (dominanza batterica, bilanciato, arricchimento virale/plasmidico), verranno salvati in:
-- `validazione/camisim_contig_scenarios/results_short/` (e relativi grafici in `plots_short/`)
-- `validazione/camisim_contig_scenarios/results_long/` (e relativi grafici in `plots_long/`)
-
 ---
-*Lavoro sviluppato come tesi per il Corso di Laurea Magistrale in Biotecnologie Industriali, Università degli Studi di Padova (A.A. 2025/2026).*
+*Project developed as the MSc Thesis for Industrial Biotechnology at the University of Padova.*
