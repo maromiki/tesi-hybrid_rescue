@@ -114,7 +114,6 @@ The pipeline orchestrates two parallel environments:
 bash slurm/contig_scenarios/submit_workflow.sh
 ```
 *Generated validation outputs and plots are automatically routed to `validation/camisim_contig_scenarios/` under their respective `short/` and `long/` subdirectories.*
-```
 
 ---
 
