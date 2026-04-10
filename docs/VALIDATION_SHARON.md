@@ -1,28 +1,28 @@
-# Validazione su Sharon
+# Validation on Sharon
 
-Valutazione eseguita su `3992` contig etichettati in 4 classi:
-- `Bacteria` (procarioti)
-- `Eukaryota` (eucarioti)
+Evaluation was run on `3992` contigs labeled into 4 classes:
+- `Bacteria` (prokaryotes)
+- `Eukaryota` (eukaryotes)
 - `Plasmid`
 - `Virus`
 
-Il confronto è stato fatto su tutte e quattro le classi, non solo sui plasmidi.
+The comparison was performed across all four classes, not only plasmids.
 
-## Script usato
+## Script Used
 - [scripts/evaluate_sharon_strategies.py](../scripts/evaluate_sharon_strategies.py)
 
-## Strategie confrontate
+## Compared Strategies
 - `pred_4cac`: 4CAC standard
 - `pred_dmc`: DeepMicroClass
-- `pred_hyb`: output ibrido storico (`output/hybrid/sharon/4CAC_classification.fasta`)
-- `pred_hierarchical`: strategia gerarchica storica
-- `pred_hybrid_rescue`: strategia storica “HYBRID + RESCUE”
-- `pred_circular_rescue`: rescue con circolarità
-- `best_tuned_accuracy`: tuning automatico soglie su strategie storiche
+- `pred_hyb`: historical hybrid output (`output/hybrid/sharon/4CAC_classification.fasta`)
+- `pred_hierarchical`: historical hierarchical strategy
+- `pred_hybrid_rescue`: historical “HYBRID + RESCUE” strategy
+- `pred_circular_rescue`: circularity-based rescue
+- `best_tuned_accuracy`: automatic threshold tuning over historical strategies
 
-## Risultati principali (Sharon)
+## Main Results (Sharon)
 
-### 1) Modello con accuracy migliore (supera i risultati in figura)
+### 1) Best-Accuracy Model (outperforms figure values)
 - `model`: `best_tuned_accuracy`
 - `accuracy`: `0.821894` (**82.19%**)
 - `f1_macro`: `0.533877`
@@ -30,9 +30,9 @@ Il confronto è stato fatto su tutte e quattro le classi, non solo sui plasmidi.
 - `f1_eukaryota`: `0.922280`
 - `f1_plasmid`: `0.265060`
 - `f1_virus`: `0.066390`
-- soglie ottime: `p_thr=0.75`, `v_thr=0.90`, `circ_len=50000`
+- optimal thresholds: `p_thr=0.75`, `v_thr=0.90`, `circ_len=50000`
 
-### 2) Modello storico “HYBRID + RESCUE” (coerente con la figura)
+### 2) Historical “HYBRID + RESCUE” Model (consistent with the figure)
 - `model`: `pred_hybrid_rescue`
 - `accuracy`: `0.803858` (**80.39%**)
 - `precision/recall/f1`:
@@ -41,12 +41,12 @@ Il confronto è stato fatto su tutte e quattro le classi, non solo sui plasmidi.
   - `Plasmid`: `0.3724 / 0.5902 / 0.4567`
   - `Virus`: `0.0507 / 0.1228 / 0.0718`
 
-Questi valori riproducono i numeri mostrati nella figura.
+These values reproduce the numbers shown in the figure.
 
-## File output
+## Output Files
 - [results/strategy_comparison.tsv](../results/strategy_comparison.tsv)
 - [results/predictions_best_tuned.tsv](../results/predictions_best_tuned.tsv)
 - [results/best_tuned_config.tsv](../results/best_tuned_config.tsv)
 
-## Nota metodologica
-Le metriche sono sempre calcolate in modalità multi-classe 4-way (`Bacteria`, `Eukaryota`, `Plasmid`, `Virus`) con report per classe (`precision`, `recall`, `f1`) e metriche globali (`accuracy`, `f1_macro`, `f1_weighted`).
+## Methodological Note
+Metrics are always computed in 4-way multi-class mode (`Bacteria`, `Eukaryota`, `Plasmid`, `Virus`) with per-class reports (`precision`, `recall`, `f1`) and global metrics (`accuracy`, `f1_macro`, `f1_weighted`).

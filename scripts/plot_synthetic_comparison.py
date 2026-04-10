@@ -47,6 +47,14 @@ CLASS_TITLES = {
 
 
 def _model_subset(df: pd.DataFrame) -> pd.DataFrame:
+    """Filter and order rows for the supported model set.
+
+    Args:
+        df: Input metrics table containing a `model` column.
+
+    Returns:
+        DataFrame limited to known models and sorted by predefined order.
+    """
     out = df[df["model"].isin(MODELS)].copy()
     out["model"] = pd.Categorical(out["model"], categories=MODELS, ordered=True)
     out = out.sort_values("model")
@@ -54,11 +62,30 @@ def _model_subset(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def _save_pub_ready(fig: plt.Figure, out_png: Path) -> None:
+    """Persist a Matplotlib figure using publication-friendly settings.
+
+    Args:
+        fig: Matplotlib figure object.
+        out_png: Target image path.
+
+    Returns:
+        None. Writes the figure to disk.
+    """
     out_png.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(out_png, dpi=320, bbox_inches="tight", facecolor="white")
 
 
 def _plot_grid_for_dataset(df_ds: pd.DataFrame, dataset_name: str, out_png: Path) -> None:
+    """Plot class-wise precision/recall/F1 bars for one dataset.
+
+    Args:
+        df_ds: Dataset-specific metrics table.
+        dataset_name: Label shown in the figure title.
+        out_png: Output path for the rendered image.
+
+    Returns:
+        None. Saves a class-wise comparison figure.
+    """
     data = _model_subset(df_ds)
     if data.empty:
         return
@@ -115,6 +142,15 @@ def _plot_grid_for_dataset(df_ds: pd.DataFrame, dataset_name: str, out_png: Path
 
 
 def _plot_macro(df: pd.DataFrame, out_png: Path) -> None:
+    """Plot macro precision, recall, and F1 bars for supported models.
+
+    Args:
+        df: Input metrics table for one dataset slice.
+        out_png: Output path for the rendered image.
+
+    Returns:
+        None. Saves a macro-metric comparison figure.
+    """
     data = _model_subset(df)
     if data.empty:
         return
@@ -154,14 +190,15 @@ def _plot_macro(df: pd.DataFrame, out_png: Path) -> None:
 
 
 def main() -> None:
+    """Parse CLI arguments and generate pooled synthetic comparison plots."""
     p = argparse.ArgumentParser(description="Create comparison plots for synthetic validation.")
     p.add_argument(
         "--metrics-pooled",
-        default=".validazione/synthetic_metrics_pooled.tsv",
+        default=".validation/synthetic_metrics_pooled.tsv",
     )
     p.add_argument(
         "--out-dir",
-        default=".validazione/plots",
+        default=".validation/plots",
     )
     args = p.parse_args()
 

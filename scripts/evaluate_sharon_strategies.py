@@ -12,12 +12,29 @@ CAC_MAP = {"prokarya": "Bacteria", "eukarya": "Eukaryota", "phage": "Virus", "pl
 
 
 def softmax(x: np.ndarray) -> np.ndarray:
+    """Compute row-wise softmax probabilities from logits.
+
+    Args:
+        x: Two-dimensional NumPy array of logits.
+
+    Returns:
+        NumPy array with the same shape containing normalized probabilities.
+    """
     z = x - x.max(axis=1, keepdims=True)
     e = np.exp(z)
     return e / e.sum(axis=1, keepdims=True)
 
 
 def evaluate(df: pd.DataFrame, pred_col: str) -> dict:
+    """Evaluate one prediction column against the ground truth labels.
+
+    Args:
+        df: DataFrame containing `class_label` and prediction columns.
+        pred_col: Name of the prediction column to score.
+
+    Returns:
+        Dictionary with accuracy, macro metrics, and per-class metrics.
+    """
     y_true = df["class_label"]
     y_pred = df[pred_col]
     rep = classification_report(y_true, y_pred, labels=CLASSES, output_dict=True, zero_division=0)
@@ -42,6 +59,7 @@ def evaluate(df: pd.DataFrame, pred_col: str) -> dict:
 
 
 def main() -> None:
+    """Run strategy comparison, brute-force tuning, and result export."""
     p = argparse.ArgumentParser()
     p.add_argument("--gt", required=True)
     p.add_argument("--dmc", required=True)
@@ -98,6 +116,14 @@ def main() -> None:
     df["pred_hierarchical"] = pred_hier
 
     def parse_len(cid: str) -> int:
+        """Extract contig length from SPAdes-style contig identifiers.
+
+        Args:
+            cid: Contig identifier string.
+
+        Returns:
+            Parsed integer length if available, otherwise 0.
+        """
         try:
             return int(cid.split("_")[3])
         except Exception:

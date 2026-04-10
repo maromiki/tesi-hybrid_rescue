@@ -1,21 +1,17 @@
 #!/usr/bin/env python3
 """
-Modello Ibrido DeepMicroClass + 4CAC
-======================================
+DeepMicroClass + 4CAC hybrid model.
 
-Questo script implementa il modello ibrido finale.
-L'idea chiave e' usare le predizioni probabilistiche (logit) di DeepMicroClass
-(DMC) come punto di partenza, mappandole sulle 4 classi principali (Virus,
-Plasmid, Bacteria, Eukaryota). 
-Queste probabilità vengono poi iniettate nel grafo di assemblaggio fornito da 
-metaSPAdes (tramite le path dei contig sui nodi del grafo).
+This script implements a hybrid contig-classification pipeline.
+DeepMicroClass (DMC) logits are converted to four-class probabilities
+(`Virus`, `Plasmid`, `Bacteria`, `Eukaryota`) and injected into the
+metaSPAdes assembly graph through contig-to-node paths.
 
-Successivamente, si applica un meccanismo di propagazione topologica ispirato a 4CAC:
-- I contig con confidenza alta (anchors) passano la loro label hard ai nodi;
-- I nodi non classificati vengono risolti mediante un processo iterativo 
-  di smooth/propagation basato sul consenso dei vicini nel grafo;
-- Un passaggio finale di "Plasmid Rescue" permette di recuperare plasmidi 
-  isolati con punteggi favorevoli ma sotto una soglia meno restrittiva.
+The method then applies a 4CAC-inspired graph refinement procedure:
+- high-confidence contigs (anchors) provide hard labels to graph nodes;
+- unresolved nodes are updated through iterative neighborhood propagation;
+- a final plasmid rescue step promotes isolated contigs with strong
+    plasmid support under a rescue threshold.
 
 """
 
@@ -45,6 +41,14 @@ FOURCAC_NAME_MAP = {
 
 @dataclass
 class GraphData:
+    """In-memory representation of graph topology and node metadata.
+
+    Attributes:
+        node_index: Mapping from raw node ID to compact node index.
+        node_ids: Ordered list of graph node IDs.
+        node_lengths: Per-node length array.
+        adjacency: Graph adjacency list in compact index space.
+    """
     node_index: Dict[int, int]
     node_ids: List[int]
     node_lengths: np.ndarray
@@ -53,6 +57,14 @@ class GraphData:
 
 @dataclass
 class ContigPaths:
+    """Contig-to-graph path mapping and contig metadata.
+
+    Attributes:
+        contig_to_index: Mapping from contig ID to compact contig index.
+        contig_names: Ordered list of contig IDs.
+        contig_lengths: Per-contig length array.
+        contig_nodes: Node-path list for each contig.
+    """
     contig_to_index: Dict[str, int]
     contig_names: List[str]
     contig_lengths: np.ndarray
@@ -61,6 +73,15 @@ class ContigPaths:
 
 
 def _softmax(logits: np.ndarray, temperature: float) -> np.ndarray:
+    """Compute row-wise temperature-scaled softmax probabilities.
+
+    Args:
+        logits: Two-dimensional NumPy array of raw logits.
+        temperature: Positive temperature used to scale logits.
+
+    Returns:
+        NumPy array with normalized probabilities and same shape as `logits`.
+    """
     z = logits / max(temperature, 1e-8)
     z = z - np.max(z, axis=1, keepdims=True)
     exp = np.exp(z)
@@ -68,6 +89,16 @@ def _softmax(logits: np.ndarray, temperature: float) -> np.ndarray:
 
 
 def load_dmc_probabilities(dmc_tsv: Path, temperature: float) -> pd.DataFrame:
+    """Load DMC logits and derive four-class probability scores.
+
+    Args:
+        dmc_tsv: Path to a DMC TSV file.
+        temperature: Temperature value for softmax conversion.
+
+    Returns:
+        DataFrame with contig IDs, per-class probabilities, confidence, and
+        mapped DMC label.
+    """
     df = pd.read_csv(dmc_tsv, sep="\t")
     needed = ["Sequence Name", "Eukaryote", "EukaryoteVirus", "Plasmid", "Prokaryote", "ProkaryoteVirus"]
     missing = [c for c in needed if c not in df.columns]
@@ -102,6 +133,16 @@ def load_dmc_probabilities(dmc_tsv: Path, temperature: float) -> pd.DataFrame:
 
 
     def _softmax(logits: np.ndarray, temperature: float) -> np.ndarray:
+        """Compute row-wise temperature-scaled softmax probabilities.
+
+        Args:
+            logits: Two-dimensional NumPy array of raw logits.
+            temperature: Positive temperature used to scale logits.
+
+        Returns:
+            NumPy array with normalized probabilities and same shape as
+            `logits`.
+        """
         z = logits / max(temperature, 1e-8)
         z = z - np.max(z, axis=1, keepdims=True)
         exp = np.exp(z)
@@ -109,6 +150,16 @@ def load_dmc_probabilities(dmc_tsv: Path, temperature: float) -> pd.DataFrame:
 
 
     def load_dmc_probabilities(dmc_tsv: Path, temperature: float) -> pd.DataFrame:
+        """Load DMC logits and derive four-class probability scores.
+
+        Args:
+            dmc_tsv: Path to a DMC TSV file.
+            temperature: Temperature value for softmax conversion.
+
+        Returns:
+            DataFrame with contig IDs, per-class probabilities, confidence,
+            and mapped DMC label.
+        """
         df = pd.read_csv(dmc_tsv, sep="\t")
         cols = ["Sequence Name", "Eukaryote", "EukaryoteVirus", "Plasmid", "Prokaryote", "ProkaryoteVirus"]
         missing = [c for c in cols if c not in df.columns]
@@ -147,6 +198,14 @@ def load_dmc_probabilities(dmc_tsv: Path, temperature: float) -> pd.DataFrame:
 
 
     def read_spades_paths(paths_file: Path) -> pd.DataFrame:
+        """Parse `scaffolds.paths` and extract contig-to-node mappings.
+
+        Args:
+            paths_file: Path to a SPAdes paths file.
+
+        Returns:
+            DataFrame with columns `contig_id`, `length`, and `nodes`.
+        """
         contigs = []
         node_list = []
         read_nodes = False
@@ -183,6 +242,14 @@ def load_dmc_probabilities(dmc_tsv: Path, temperature: float) -> pd.DataFrame:
 
 
     def read_gfa_adjacency(gfa_file: Path) -> Dict[int, set]:
+        """Build an undirected node adjacency map from a GFA file.
+
+        Args:
+            gfa_file: Path to assembly graph in GFA format.
+
+        Returns:
+            Dictionary mapping node ID to neighboring node IDs.
+        """
         adj: Dict[int, set] = {}
         with gfa_file.open() as f:
             for line in f:
@@ -203,6 +270,16 @@ def load_dmc_probabilities(dmc_tsv: Path, temperature: float) -> pd.DataFrame:
 
 
     def is_isolated_contig(nodes: List[int], adj: Dict[int, set]) -> bool:
+        """Check whether a contig path is isolated from external graph nodes.
+
+        Args:
+            nodes: Node IDs traversed by one contig.
+            adj: Graph adjacency dictionary.
+
+        Returns:
+            True if every neighbor of the contig nodes remains within the same
+            node set; otherwise False.
+        """
         own = set(nodes)
         if not own:
             return False
@@ -214,6 +291,16 @@ def load_dmc_probabilities(dmc_tsv: Path, temperature: float) -> pd.DataFrame:
 
 
     def write_4cac_input(dmc_probs: pd.DataFrame, out_file: Path, anchor_threshold: float) -> Dict[str, float]:
+        """Write 4CAC probability input file and report anchor statistics.
+
+        Args:
+            dmc_probs: DMC-derived probability table.
+            out_file: Output path for 4CAC class-probability input.
+            anchor_threshold: Confidence threshold used for anchor counting.
+
+        Returns:
+            Dictionary with `anchors_n` and `anchors_rate` statistics.
+        """
         x = dmc_probs.copy()
         uncertain = x["confidence"] < anchor_threshold
         # Keep original DMC probability vectors also for uncertain contigs.
@@ -235,6 +322,20 @@ def load_dmc_probabilities(dmc_tsv: Path, temperature: float) -> pd.DataFrame:
         phage_threshold: float,
         plasmid_threshold: float,
     ) -> None:
+        """Execute 4CAC classification with configured thresholds.
+
+        Args:
+            fourcac_script: Path to `classify_4CAC.py`.
+            fourcac_env: Conda environment name for 4CAC execution.
+            asmdir: Assembly directory path.
+            classdir: Directory containing class probability input.
+            outdir: Output directory for 4CAC results.
+            phage_threshold: Phage confidence threshold.
+            plasmid_threshold: Plasmid confidence threshold.
+
+        Returns:
+            None. Runs an external process and writes output files.
+        """
         asmdir_s = str(asmdir) if str(asmdir).endswith("/") else f"{asmdir}/"
         classdir_s = str(classdir) if str(classdir).endswith("/") else f"{classdir}/"
         outdir_s = str(outdir) if str(outdir).endswith("/") else f"{outdir}/"
@@ -262,6 +363,14 @@ def load_dmc_probabilities(dmc_tsv: Path, temperature: float) -> pd.DataFrame:
 
 
     def load_4cac_output(c4_file: Path) -> pd.DataFrame:
+        """Load and normalize 4CAC predicted labels.
+
+        Args:
+            c4_file: Path to 4CAC output file.
+
+        Returns:
+            DataFrame with columns `contig_id` and normalized `pred_label`.
+        """
         df = pd.read_csv(c4_file, header=None, names=["contig_id", "raw"])
         df["raw"] = df["raw"].astype(str).str.strip().str.lower()
         df["pred_label"] = df["raw"].map(FOURCAC_NAME_MAP).fillna("Unknown")
@@ -275,6 +384,18 @@ def load_dmc_probabilities(dmc_tsv: Path, temperature: float) -> pd.DataFrame:
         adjacency: Dict[int, set],
         plasmid_rescue_threshold: float,
     ) -> pd.DataFrame:
+        """Apply isolated-contig plasmid rescue to prediction labels.
+
+        Args:
+            pred_df: DataFrame with at least `contig_id` and `pred_label`.
+            dmc_probs: DMC-derived probability table with `plas_score`.
+            contig_nodes_df: Contig path DataFrame containing node lists.
+            adjacency: Graph adjacency dictionary.
+            plasmid_rescue_threshold: Plasmid score threshold for rescue.
+
+        Returns:
+            Updated prediction DataFrame including rescue annotations.
+        """
         iso = {
             row.contig_id: is_isolated_contig(row.nodes, adjacency)
             for row in contig_nodes_df.itertuples(index=False)
@@ -291,6 +412,15 @@ def load_dmc_probabilities(dmc_tsv: Path, temperature: float) -> pd.DataFrame:
 
 
     def evaluate_predictions(pred_df: pd.DataFrame, gt_file: Path) -> Dict[str, float]:
+        """Evaluate predictions against ground truth and compute metrics.
+
+        Args:
+            pred_df: Prediction DataFrame with `contig_id` and `pred_label`.
+            gt_file: Ground-truth CSV path.
+
+        Returns:
+            Dictionary of global and per-class performance metrics.
+        """
         gt = pd.read_csv(gt_file).rename(columns={"class_label": "true_label"})[["contig_id", "true_label"]]
         merged = gt.merge(pred_df[["contig_id", "pred_label"]], on="contig_id", how="inner")
 
@@ -324,6 +454,14 @@ def load_dmc_probabilities(dmc_tsv: Path, temperature: float) -> pd.DataFrame:
 
 
     def parse_thresholds(spec: str) -> List[float]:
+        """Parse threshold specification string into numeric values.
+
+        Args:
+            spec: Comma-separated list, `start:stop:step` range, or single value.
+
+        Returns:
+            List of float threshold values.
+        """
         spec = spec.strip()
         if "," in spec:
             return [float(x) for x in spec.split(",") if x.strip()]
@@ -352,6 +490,25 @@ def load_dmc_probabilities(dmc_tsv: Path, temperature: float) -> pd.DataFrame:
         plasmid_rescue_threshold: float,
         temperature: float,
     ) -> Dict[str, float]:
+        """Run the full hybrid inference and evaluation pipeline.
+
+        Args:
+            dmc_file: DMC TSV path.
+            gfa_file: Assembly graph GFA path.
+            paths_file: SPAdes paths file.
+            gt_file: Ground-truth CSV path.
+            output_dir: Output directory for generated artifacts.
+            fourcac_script: Path to 4CAC classifier script.
+            fourcac_env: Conda environment name for 4CAC.
+            asmdir: Assembly directory passed to 4CAC.
+            anchor_threshold: Anchor confidence threshold.
+            graph_threshold: 4CAC graph threshold.
+            plasmid_rescue_threshold: Plasmid rescue threshold.
+            temperature: Softmax temperature for DMC logits.
+
+        Returns:
+            Dictionary of metrics and diagnostic counts.
+        """
         output_dir.mkdir(parents=True, exist_ok=True)
 
         dmc = load_dmc_probabilities(dmc_file, temperature)
@@ -389,11 +546,28 @@ def load_dmc_probabilities(dmc_tsv: Path, temperature: float) -> pd.DataFrame:
 
 
     def load_4cac_baseline(c4_file: Path, gt_file: Path) -> Dict[str, float]:
+        """Load and evaluate baseline 4CAC predictions.
+
+        Args:
+            c4_file: Path to baseline 4CAC predictions.
+            gt_file: Ground-truth CSV path.
+
+        Returns:
+            Dictionary of evaluation metrics.
+        """
         pred = load_4cac_output(c4_file)
         return evaluate_predictions(pred, gt_file)
 
 
     def cmd_compare_baseline(args: argparse.Namespace) -> None:
+        """CLI handler for DMC vs 4CAC baseline comparison.
+
+        Args:
+            args: Parsed CLI arguments.
+
+        Returns:
+            None. Writes baseline summary table and prints key metrics.
+        """
         base = load_4cac_baseline(Path(args.c4_file), Path(args.gt_file))
         dmc_probs = load_dmc_probabilities(Path(args.dmc_file), args.temperature)
         dmc_pred = dmc_probs[["contig_id", "pred_label_dmc"]].rename(columns={"pred_label_dmc": "pred_label"})
@@ -413,6 +587,14 @@ def load_dmc_probabilities(dmc_tsv: Path, temperature: float) -> pd.DataFrame:
 
 
     def cmd_grid_search(args: argparse.Namespace) -> None:
+        """CLI handler for anchor-threshold grid search.
+
+        Args:
+            args: Parsed CLI arguments.
+
+        Returns:
+            None. Writes per-threshold outputs and summary files.
+        """
         out_root = Path(args.output_dir)
         out_root.mkdir(parents=True, exist_ok=True)
 
@@ -445,6 +627,14 @@ def load_dmc_probabilities(dmc_tsv: Path, temperature: float) -> pd.DataFrame:
 
 
     def cmd_run(args: argparse.Namespace) -> None:
+        """CLI handler for a single configured hybrid run.
+
+        Args:
+            args: Parsed CLI arguments.
+
+        Returns:
+            None. Writes output artifacts and prints run metrics.
+        """
         m = run_pipeline(
             dmc_file=Path(args.dmc_file),
             gfa_file=Path(args.gfa_file),
@@ -463,6 +653,11 @@ def load_dmc_probabilities(dmc_tsv: Path, temperature: float) -> pd.DataFrame:
 
 
     def build_parser() -> argparse.ArgumentParser:
+        """Build the command-line parser for all supported subcommands.
+
+        Returns:
+            Configured `argparse.ArgumentParser` instance.
+        """
         p = argparse.ArgumentParser(description="Hybrid DMC + 4CAC propagation")
         sub = p.add_subparsers(dest="command", required=True)
 
@@ -499,6 +694,7 @@ def load_dmc_probabilities(dmc_tsv: Path, temperature: float) -> pd.DataFrame:
 
 
     def main() -> None:
+        """Program entry point for command dispatch."""
         parser = build_parser()
         args = parser.parse_args()
         args.func(args)

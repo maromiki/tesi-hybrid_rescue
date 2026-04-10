@@ -27,6 +27,16 @@ GT_MAP = {
 
 
 def normalize_gt_label(row: pd.Series) -> str:
+    """Map one ground-truth row to a normalized 4-class label.
+
+    Args:
+        row: Input row containing one or more class columns such as
+            `source_class`, `true_class`, or `Ground_Truth_Class`.
+
+    Returns:
+        Normalized label in {"Bacteria", "Eukaryota", "Plasmid", "Virus"}
+        when recognized, otherwise "Unknown".
+    """
     for col in ("source_class", "true_class", "Ground_Truth_Class"):
         if col in row and pd.notna(row[col]):
             key = str(row[col]).strip().lower()
@@ -36,6 +46,14 @@ def normalize_gt_label(row: pd.Series) -> str:
 
 
 def read_fasta_lengths(fasta_path: Path) -> Dict[str, int]:
+    """Read sequence lengths from a FASTA file.
+
+    Args:
+        fasta_path: Path to the input FASTA file.
+
+    Returns:
+        Dictionary mapping contig IDs to sequence length in base pairs.
+    """
     lengths: Dict[str, int] = {}
     cid = None
     clen = 0
@@ -54,6 +72,16 @@ def read_fasta_lengths(fasta_path: Path) -> Dict[str, int]:
 
 
 def write_subset_fasta(source_fasta: Path, keep_ids: set[str], out_fasta: Path) -> None:
+    """Write only selected sequence records to a new FASTA file.
+
+    Args:
+        source_fasta: Source FASTA path containing all contigs.
+        keep_ids: Set of contig IDs to retain.
+        out_fasta: Output FASTA path for the subset.
+
+    Returns:
+        None. The subset FASTA is written to disk.
+    """
     out_fasta.parent.mkdir(parents=True, exist_ok=True)
     with source_fasta.open("rt") as fin, out_fasta.open("wt") as fout:
         write = False
@@ -66,6 +94,15 @@ def write_subset_fasta(source_fasta: Path, keep_ids: set[str], out_fasta: Path) 
 
 
 def round_counts(total: int, fractions: Dict[str, float]) -> Dict[str, int]:
+    """Convert class fractions into integer class counts.
+
+    Args:
+        total: Total number of contigs to allocate.
+        fractions: Class-to-fraction mapping for the 4 target classes.
+
+    Returns:
+        Dictionary of integer class counts that sums exactly to `total`.
+    """
     raw = {c: total * float(fractions[c]) for c in CLASSES}
     base = {c: int(np.floor(raw[c])) for c in CLASSES}
     remainder = total - sum(base.values())
@@ -84,6 +121,19 @@ def create_scenarios(
     seed: int,
     min_length: int,
 ) -> None:
+    """Generate contig subset scenarios from a full assembly and ground truth.
+
+    Args:
+        gt_file: Ground-truth TSV path.
+        assembly_fasta: Assembly FASTA path used for sequence extraction.
+        config_json: JSON configuration with scenario fractions.
+        out_dir: Output directory where scenario folders are created.
+        seed: Random seed for reproducible sampling.
+        min_length: Minimum contig length (bp) to include.
+
+    Returns:
+        None. Scenario tables and FASTA subsets are written to disk.
+    """
     out_dir.mkdir(parents=True, exist_ok=True)
 
     gt = pd.read_csv(gt_file, sep="\t", low_memory=False)
@@ -165,6 +215,7 @@ def create_scenarios(
 
 
 def main() -> None:
+    """Parse CLI arguments and run scenario generation."""
     p = argparse.ArgumentParser(description="Create 1000-contig CAMISIM scenario datasets from assembled contigs.")
     p.add_argument("--gt", required=True, help="Ground-truth TSV with contig_id and class columns")
     p.add_argument("--assembly", required=True, help="Assembly FASTA used to compute lengths and export scenario FASTA")

@@ -46,6 +46,15 @@ GT_MAP = {
 
 
 def normalize_text_label(x: object, mapping: Dict[str, str]) -> str:
+    """Normalize one raw label using a case-insensitive mapping.
+
+    Args:
+        x: Raw label value.
+        mapping: Dictionary from normalized raw tokens to canonical labels.
+
+    Returns:
+        Canonical class label, or "Unknown" if missing/unmapped.
+    """
     if pd.isna(x):
         return "Unknown"
     key = str(x).strip().lower()
@@ -53,6 +62,15 @@ def normalize_text_label(x: object, mapping: Dict[str, str]) -> str:
 
 
 def load_gt(gt_file: Path) -> pd.DataFrame:
+    """Load and normalize ground-truth labels from supported schemas.
+
+    Args:
+        gt_file: Path to a ground-truth TSV file.
+
+    Returns:
+        DataFrame with columns `contig_id` and `true_label` restricted to
+        the 4 target classes.
+    """
     df = pd.read_csv(gt_file, sep="\t", low_memory=False)
 
     if {"Contig_ID", "Ground_Truth_Class"}.issubset(df.columns):
@@ -73,6 +91,14 @@ def load_gt(gt_file: Path) -> pd.DataFrame:
 
 
 def load_dmc(dmc_file: Path) -> pd.DataFrame:
+    """Load DMC best-choice predictions and map them to four classes.
+
+    Args:
+        dmc_file: Path to DMC prediction TSV.
+
+    Returns:
+        DataFrame with columns `contig_id` and `pred_dmc`.
+    """
     df = pd.read_csv(dmc_file, sep="\t", usecols=["Sequence Name", "best_choice"], low_memory=False)
     out = df.rename(columns={"Sequence Name": "contig_id"}).copy()
     out["pred_dmc"] = out["best_choice"].map(DMC_MAP).fillna("Unknown")
@@ -80,6 +106,16 @@ def load_dmc(dmc_file: Path) -> pd.DataFrame:
 
 
 def load_cac_like(pred_file: Path, is_hybrid_summary_tsv: bool) -> pd.DataFrame:
+    """Load 4CAC-like predictions from either raw or summary TSV formats.
+
+    Args:
+        pred_file: Path to prediction file.
+        is_hybrid_summary_tsv: If True, parse the hybrid summary schema;
+            otherwise parse a two-column raw output.
+
+    Returns:
+        DataFrame with columns `contig_id` and normalized `pred`.
+    """
     if is_hybrid_summary_tsv:
         df = pd.read_csv(pred_file, sep="\t", usecols=["Contig_ID", "Classification"], low_memory=False)
         out = df.rename(columns={"Contig_ID": "contig_id", "Classification": "raw"}).copy()
@@ -91,6 +127,18 @@ def load_cac_like(pred_file: Path, is_hybrid_summary_tsv: bool) -> pd.DataFrame:
 
 
 def evaluate_model(y_true: pd.Series, y_pred: pd.Series, dataset: str, sample: str, model: str) -> Dict[str, float]:
+    """Compute macro and per-class metrics for one model evaluation.
+
+    Args:
+        y_true: Ground-truth labels.
+        y_pred: Predicted labels.
+        dataset: Dataset identifier.
+        sample: Sample identifier.
+        model: Model identifier.
+
+    Returns:
+        Dictionary containing metadata and scalar metrics.
+    """
     p_macro, r_macro, f1_macro, _ = precision_recall_fscore_support(
         y_true,
         y_pred,
@@ -125,11 +173,27 @@ def evaluate_model(y_true: pd.Series, y_pred: pd.Series, dataset: str, sample: s
 
 
 def find_first_tsv(folder: Path) -> Path | None:
+    """Return the first TSV file in a directory, if any.
+
+    Args:
+        folder: Directory to search.
+
+    Returns:
+        Path to the first TSV in lexical order, or None if absent.
+    """
     tsvs = sorted(folder.glob("*.tsv"))
     return tsvs[0] if tsvs else None
 
 
 def build_jobs(root: Path) -> List[Dict[str, object]]:
+    """Build validation jobs for CAMI-I, CAMI-II, and CAMISIM datasets.
+
+    Args:
+        root: Workspace root containing the expected `output/` tree.
+
+    Returns:
+        List of job dictionaries with dataset/sample metadata and file paths.
+    """
     jobs: List[Dict[str, object]] = []
 
     cami1_gt_dir = root / "output/cami_i_high/ground_truth_final_cami1"
@@ -195,6 +259,15 @@ def build_jobs(root: Path) -> List[Dict[str, object]]:
 
 
 def run_validation(root: Path, out_dir: Path) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    """Run synthetic benchmarking across all configured datasets/jobs.
+
+    Args:
+        root: Workspace root containing prediction and ground-truth files.
+        out_dir: Output directory for per-sample, aggregated, and skipped TSVs.
+
+    Returns:
+        Tuple `(per_sample, skipped_df)` with evaluated rows and skipped jobs.
+    """
     out_dir.mkdir(parents=True, exist_ok=True)
 
     rows: List[Dict[str, float]] = []
@@ -346,6 +419,7 @@ def run_validation(root: Path, out_dir: Path) -> Tuple[pd.DataFrame, pd.DataFram
 
 
 def main() -> None:
+    """Parse CLI arguments and execute synthetic validation workflow."""
     p = argparse.ArgumentParser(description="Validation DMC vs 4CAC vs Hybrid on synthetic datasets.")
     p.add_argument(
         "--root",
@@ -354,7 +428,7 @@ def main() -> None:
     )
     p.add_argument(
         "--out-dir",
-        default=".validazione",
+        default=".validation",
         help="Output folder for validation results.",
     )
     args = p.parse_args()

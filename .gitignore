@@ -1,0 +1,41 @@
+# Python and Jupyter temporary files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.ipynb_checkpoints/
+
+# Heavy data, models, and datasets
+*.fasta
+*.fasta.gz
+*.fastq
+*.fq
+*.fq.gz
+*.bam
+*.sam
+*.paf
+*.gfa
+*.paths
+*.h5
+*.pt
+*.pkl
+*.model
+
+# Project folders to exclude from version control
+backups/
+temporary/
+slurm/**/logs/
+slurm/**/runs/
+validation/**/runs/
+validation/**/ground_truth/
+
+# Ignore intermediate compute logs
+*.out
+*.err
+results/**/*.out
+results/**/*.err
+
+# Keep publication-ready PDFs, ignore duplicate PNG plots in validation outputs
+validation/camisim_contig_scenarios/plots_long/*.png
+validation/camisim_contig_scenarios/plots_short/*.png
+validation/plots_sharon/*.png

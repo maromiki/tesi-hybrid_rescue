@@ -30,12 +30,28 @@ CAC_MAP = {
 
 
 def normalize_cac(x: object) -> str:
+    """Normalize a raw 4CAC-style label to repository class names.
+
+    Args:
+        x: Raw value read from prediction output.
+
+    Returns:
+        Normalized class label or "Unknown" when the value is missing/unmapped.
+    """
     if pd.isna(x):
         return "Unknown"
     return CAC_MAP.get(str(x).strip().lower(), "Unknown")
 
 
 def load_dmc(path: Path) -> pd.DataFrame:
+    """Load DeepMicroClass predictions and map them to 4 classes.
+
+    Args:
+        path: Path to DMC TSV output.
+
+    Returns:
+        DataFrame with columns `contig_id` and `pred_dmc`.
+    """
     df = pd.read_csv(path, sep="\t", usecols=["Sequence Name", "best_choice"], low_memory=False)
     out = df.rename(columns={"Sequence Name": "contig_id"}).copy()
     out["pred_dmc"] = out["best_choice"].map(DMC_MAP).fillna("Unknown")
@@ -43,12 +59,33 @@ def load_dmc(path: Path) -> pd.DataFrame:
 
 
 def load_cac(path: Path, col_name: str) -> pd.DataFrame:
+    """Load 4CAC-like predictions from a two-column text output.
+
+    Args:
+        path: Path to prediction file with contig ID and raw label.
+        col_name: Name to assign to the normalized prediction column.
+
+    Returns:
+        DataFrame with `contig_id` and the provided prediction column.
+    """
     df = pd.read_csv(path, header=None, names=["contig_id", "raw"], low_memory=False)
     df[col_name] = df["raw"].map(normalize_cac)
     return df[["contig_id", col_name]]
 
 
 def evaluate_one(y_true: pd.Series, y_pred: pd.Series, mode: str, scenario: str, model: str) -> Dict[str, float]:
+    """Compute per-class and macro metrics for one model/scenario pair.
+
+    Args:
+        y_true: Ground-truth class labels.
+        y_pred: Predicted class labels.
+        mode: Scenario mode identifier (e.g., "short" or "long").
+        scenario: Scenario name.
+        model: Model identifier.
+
+    Returns:
+        Flat dictionary of metrics and metadata for tabular export.
+    """
     p_macro, r_macro, f1_macro, _ = precision_recall_fscore_support(
         y_true, y_pred, labels=CLASSES, average="macro", zero_division=0
     )
@@ -81,6 +118,19 @@ def run_eval(
     hybrid_file: Path,
     out_dir: Path,
 ) -> None:
+    """Evaluate DMC, 4CAC, and hybrid predictions across scenario folders.
+
+    Args:
+        mode: Scenario mode ("short" or "long").
+        scenario_root: Directory containing one subdirectory per scenario.
+        dmc_file: DMC prediction file.
+        c4_file: 4CAC prediction file.
+        hybrid_file: Hybrid prediction file.
+        out_dir: Destination directory for metrics and skipped reports.
+
+    Returns:
+        None. Writes per-scenario and mean metric TSV files.
+    """
     out_dir.mkdir(parents=True, exist_ok=True)
 
     dmc = load_dmc(dmc_file)
@@ -159,6 +209,7 @@ def run_eval(
 
 
 def main() -> None:
+    """Parse CLI arguments and launch scenario evaluation."""
     p = argparse.ArgumentParser(description="Evaluate DMC/4CAC/hybrid on CAMISIM contig-level scenarios.")
     p.add_argument("--mode", required=True, choices=["short", "long"])
     p.add_argument("--scenario-root", required=True)

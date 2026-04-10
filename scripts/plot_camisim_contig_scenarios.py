@@ -25,6 +25,17 @@ CLASSES = ["virus", "plasmid", "eukaryota", "bacteria"]
 
 
 def plot_one(metrics: pd.DataFrame, mode: str, scenario: str, out_file: Path) -> None:
+    """Create a 2x2 class-wise bar chart for one scenario.
+
+    Args:
+        metrics: Per-scenario metrics table.
+        mode: Evaluation mode label ("short" or "long").
+        scenario: Scenario identifier used in the plot title.
+        out_file: Destination image path.
+
+    Returns:
+        None. Saves the figure to disk.
+    """
     metrics = metrics[metrics["model"].isin(MODELS)].copy()
     metrics["model"] = pd.Categorical(metrics["model"], MODELS, ordered=True)
     metrics = metrics.sort_values("model")
@@ -65,6 +76,7 @@ def plot_one(metrics: pd.DataFrame, mode: str, scenario: str, out_file: Path) ->
 
 
 def main() -> None:
+    """Parse CLI arguments and render scenario comparison plots."""
     p = argparse.ArgumentParser(description="Plot class-wise results for CAMISIM contig scenarios.")
     p.add_argument("--metrics", required=True, help="metrics_<mode>_per_scenario.tsv")
     p.add_argument("--out-dir", required=True)

@@ -10,6 +10,15 @@ import pandas as pd
 
 
 def softmax(logits: np.ndarray, temperature: float) -> np.ndarray:
+    """Compute row-wise softmax with temperature scaling.
+
+    Args:
+        logits: Two-dimensional array of raw class logits.
+        temperature: Positive scaling factor for softmax smoothing.
+
+    Returns:
+        Array of probabilities with shape equal to `logits.shape`.
+    """
     z = logits / max(temperature, 1e-8)
     z = z - np.max(z, axis=1, keepdims=True)
     e = np.exp(z)
@@ -23,6 +32,18 @@ def dmc_to_4class(
     anchor_threshold: float,
     fallback_probs_tsv: Path | None = None,
 ) -> None:
+    """Convert DMC logits into 4CAC-compatible four-class probabilities.
+
+    Args:
+        dmc_tsv: Path to DeepMicroClass TSV output.
+        out_tsv: Output path for the 4CAC probability table.
+        temperature: Softmax temperature.
+        anchor_threshold: Confidence threshold for anchor detection.
+        fallback_probs_tsv: Optional fallback probability table for uncertain rows.
+
+    Returns:
+        None. Writes a tab-separated table to `out_tsv`.
+    """
     df = pd.read_csv(dmc_tsv, sep="\t", low_memory=False)
     cols = ["Sequence Name", "Eukaryote", "EukaryoteVirus", "Plasmid", "Prokaryote", "ProkaryoteVirus"]
     miss = [c for c in cols if c not in df.columns]
@@ -83,6 +104,21 @@ def run_4cac(
     phage_thr: float,
     plasmid_thr: float,
 ) -> None:
+    """Execute 4CAC classification using the generated probability input.
+
+    Args:
+        fourcac_script: Path to `classify_4CAC.py`.
+        conda_env: Conda environment name containing 4CAC dependencies.
+        assembler: Assembler mode expected by 4CAC.
+        asmdir: Input assembly directory.
+        classdir: Directory containing class probability input file.
+        outdir: Output directory for 4CAC predictions.
+        phage_thr: Phage decision threshold passed to 4CAC.
+        plasmid_thr: Plasmid decision threshold passed to 4CAC.
+
+    Returns:
+        None. Runs an external command and writes files to disk.
+    """
     cmd = [
         "conda",
         "run",
@@ -107,6 +143,7 @@ def run_4cac(
 
 
 def main() -> None:
+    """Parse CLI arguments, build 4-class probabilities, and run 4CAC."""
     p = argparse.ArgumentParser(description="Run hybrid graph correction by feeding DMC softmax scores to 4CAC.")
     p.add_argument("--dmc", required=True)
     p.add_argument("--asmdir", required=True)
