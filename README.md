@@ -1,21 +1,46 @@
-# finalissima - Hybrid DMC + 4CAC (Sharon)
+# Hybrid + Rescue: Multi-Class Metagenomic Classification Pipeline
 
-Reproducible pipeline to combine DeepMicroClass probabilistic predictions with 4CAC-style topological propagation.
+![Python](https://img.shields.io/badge/Python-3.8%2B-blue)
+![Data Analysis](https://img.shields.io/badge/Data%20Analysis-Pandas%20%7C%20Scikit--Learn-green)
+![HPC](https://img.shields.io/badge/HPC-SLURM-orange)
+![Genomics](https://img.shields.io/badge/Genomics-SPAdes%20%7C%20Flye-red)
 
-Current behavior note: contigs below the anchor threshold ("uncertain") are not overwritten with `0.25/0.25/0.25/0.25`; their original DMC probability vectors are preserved.
+## 📌 Executive Summary
+**Hybrid + Rescue** is a reproducible, high-performance computational pipeline designed to optimize multi-class metagenomic classification. 
 
-## Structure
-- `scripts/hybrid_dmc_4cac.py`: full pipeline + grid search + baseline comparison.
-- `config/sharon_paths.json`: Sharon input paths.
-- `docs/TOOL_ANALYSIS.md`: technical DMC/4CAC integration summary.
-- `results/`: validation outputs.
+The architecture bridges the gap between semantic sensitivity and topological precision by combining **DeepMicroClass (DMC)** probabilistic predictions with **4CAC-style** topological graph propagation. To overcome the inherent limitations of rigid graph filtering, the pipeline integrates a novel biological heuristic—**Plasmid Rescue**—to systematically recover isolated plasmid contigs.
 
-## Requirements
-Python environment with: `numpy`, `pandas`, `scikit-learn`.
+### 🧠 Core Logic & Current Behavior
+*   **Non-Destructive Thresholding:** Contigs falling below the anchor threshold ("uncertain") are not hard-coded/overwritten with uniform probabilities (0.25). Instead, their original DMC probability vectors are preserved and propagated.
+*   **Diagnostic Tuning:** Threshold adjustments dynamically update diagnostic metrics (anchor counts/rates) without forcing the alteration of uncertain-contig class scores, ensuring robust and transparent data flows.
 
-## Execution
-### 1) Baseline
-```bash
+---
+
+## 📂 Repository Structure
+*   `scripts/`: Core Python modules and pipeline orchestrators.
+    *   `hybrid_dmc_4cac.py`: Main execution script (baseline, grid-search, tuning, final run).
+    *   `evaluate_sharon_strategies.py`: Benchmarking on environmental datasets.
+*   `config/`: JSON configuration files for path management (e.g., `sharon_paths.json`).
+*   `slurm/`: Job submission scripts for HPC cluster deployment.
+*   `validation/`: Output directories for CAMISIM simulated scenarios.
+*   `docs/`: Technical integration summaries (`TOOL_ANALYSIS.md`).
+*   `results/`: Validation and metrics outputs.
+
+## ⚙️ Requirements
+Ensure a Python virtual environment (e.g., Conda) is active.
+*   `numpy`
+*   `pandas`
+*   `scikit-learn`
+
+---
+
+## 🚀 Execution Modules
+
+The `hybrid_dmc_4cac.py` orchestrator handles multiple execution modes.
+
+### 1. Baseline Comparison
+Evaluates isolated base models (4CAC vs DMC) prior to hybrid integration.
+```
 python scripts/hybrid_dmc_4cac.py compare-baseline \
   --c4-file data/output/4cac/sharon/4CAC_classification.fasta \
   --dmc-file data/output/dmc/sharon/scaffolds/scaffolds.fasta_pred_one-hot_hybrid.tsv \
@@ -23,8 +48,9 @@ python scripts/hybrid_dmc_4cac.py compare-baseline \
   --output-dir results/baseline
 ```
 
-### 2) Anchor Threshold Search
-```bash
+### 2. Anchor Threshold Search (Grid Search)
+Performs parameter sweeps for optimization. *Note: With current logic, this is primarily diagnostic to track anchor rates.*
+```
 python scripts/hybrid_dmc_4cac.py grid-search \
   --dmc-file data/output/dmc/sharon/scaffolds/scaffolds.fasta_pred_one-hot_hybrid.tsv \
   --gfa-file data/output/metaspades/sharon/assembly_graph_with_scaffolds.gfa \
@@ -38,12 +64,9 @@ python scripts/hybrid_dmc_4cac.py grid-search \
   --n-iter 20
 ```
 
-With the current behavior, `--anchor-thresholds` is primarily useful for diagnostics/reporting (anchor counts/rates), while the probabilistic input to 4CAC remains the original DMC vector even for uncertain contigs.
-
-In practice, changing `--anchor-thresholds` updates diagnostic fields (`anchors_n`, `anchors_rate`) but does not rewrite uncertain-contig class scores.
-
-### 3) Final Run With Best Threshold
-```bash
+### 3. Final Run (Optimized Thresholds)
+Deploys the pipeline using the best parameters identified during tuning.
+```
 python scripts/hybrid_dmc_4cac.py run \
   --dmc-file data/output/dmc/sharon/scaffolds/scaffolds.fasta_pred_one-hot_hybrid.tsv \
   --gfa-file data/output/metaspades/sharon/assembly_graph_with_scaffolds.gfa \
@@ -57,8 +80,9 @@ python scripts/hybrid_dmc_4cac.py run \
   --n-iter 20
 ```
 
-### 4) Historical Strategy Comparison + Tuning (4 classes)
-```bash
+### 4. Historical Strategy Comparison (4-Class Tuning)
+Comprehensive benchmarking across baseline and hybrid strategies.
+```
 python scripts/evaluate_sharon_strategies.py \
   --gt data/output/sharon/sharon_ground_truth.csv \
   --dmc data/output/dmc/sharon/scaffolds/scaffolds.fasta_pred_one-hot_hybrid.tsv \
@@ -68,38 +92,26 @@ python scripts/evaluate_sharon_strategies.py \
   --out results/strategy_comparison.tsv
 ```
 
-## Main Outputs
-- `predictions_hybrid.tsv`: final class per contig.
-- `node_state.tsv`: node states (labels + propagated probabilities).
-- `metrics_hybrid.tsv`: full Sharon metrics + diagnostics `anchors_n`, `anchors_rate`, and `rescued_plasmids`.
-- `grid_search_summary.tsv`: configuration comparison; with current logic it is mainly diagnostic and not used to enforce uncertain-contig score uniformization.
-- `strategy_comparison.tsv`: complete 4-class comparison across baseline and hybrid strategies.
-- `predictions_best_tuned.tsv`: predictions from the best accuracy-tuned model.
-- `best_tuned_config.tsv`: optimal tuned thresholds.
+---
 
-## Workflow CAMISIM contig-level (short vs long)
-For controlled **contig-level** benchmarking (not read-level), using simulation and assembly on SLURM:
+## 📊 Expected Outputs
+*   `predictions_hybrid.tsv`: Final taxonomic label per contig.
+*   `node_state.tsv`: Detailed node states and propagated probabilities.
+*   `metrics_hybrid.tsv`: Full metrics + diagnostics (`anchors_n`, `anchors_rate`, `rescued_plasmids`).
+*   `predictions_best_tuned.tsv`: Predictions from the accuracy-tuned model.
 
-- Scenario config: `config/camisim_contig_scenarios_1000.json`
-- Contig subset creation script: `scripts/create_camisim_contig_scenarios.py`
-- Scenario evaluation script: `scripts/evaluate_camisim_contig_scenarios.py`
-- Scenario plotting script: `scripts/plot_camisim_contig_scenarios.py`
-- Hybrid from DMC output: `scripts/run_hybrid_from_dmc.py`
-- Full SLURM pipeline: `slurm/contig_scenarios/submit_workflow.sh`
+---
 
-The pipeline generates two separate branches:
-- **short**: metagenomic CAMISIM (`art`) + assembly with `metaSPAdes --meta`
-- **long**: metagenomic CAMISIM (`nanosim3`) + assembly with `Flye --meta`
+## 🖥️ HPC & CAMISIM Validation Workflow (SLURM)
+To ensure robustness across sequencing technologies, the repository includes a controlled contig-level benchmarking workflow scaled via **SLURM**.
 
-Main outputs are written to:
-- `validation/camisim_contig_scenarios/runs/short/`
-- `validation/camisim_contig_scenarios/runs/long/`
-- `validation/camisim_contig_scenarios/results_short/`
-- `validation/camisim_contig_scenarios/results_long/`
-- `validation/camisim_contig_scenarios/plots_short/`
-- `validation/camisim_contig_scenarios/plots_long/`
+The pipeline orchestrates two parallel environments:
+1.  **Short-read branch:** CAMISIM (`art`) simulation + **metaSPAdes** (`--meta`) assembly.
+2.  **Long-read branch:** CAMISIM (`nanosim3`) simulation + **Flye** (`--meta`) assembly.
 
-Run:
-```bash
+**Submit the automated workflow to the cluster:**
+```
 bash slurm/contig_scenarios/submit_workflow.sh
+```
+*Generated validation outputs and plots are automatically routed to `validation/camisim_contig_scenarios/` under their respective `short/` and `long/` subdirectories.*
 ```
