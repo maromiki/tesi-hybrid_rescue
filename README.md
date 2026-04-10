@@ -115,3 +115,10 @@ bash slurm/contig_scenarios/submit_workflow.sh
 ```
 *Generated validation outputs and plots are automatically routed to `validation/camisim_contig_scenarios/` under their respective `short/` and `long/` subdirectories.*
 ```
+
+---
+
+*Project developed as the MSc Thesis for Industrial Biotechnology at the University of Padova.*
+```
+
+***
