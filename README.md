@@ -3,6 +3,7 @@
 ![Python](https://img.shields.io/badge/Python-3.8%2B-blue)
 ![Data Analysis](https://img.shields.io/badge/Data%20Analysis-Pandas%20%7C%20Scikit--Learn-green)
 ![HPC](https://img.shields.io/badge/HPC-SLURM-orange)
+![Biology](https://img.shields.io/badge/Domain-Metagenomics-red)
 ![Genomics](https://img.shields.io/badge/Genomics-SPAdes%20%7C%20Flye-red)
 
 ## 📌 Executive Summary
