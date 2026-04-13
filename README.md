@@ -11,9 +11,7 @@
 
 The architecture bridges the gap between semantic sensitivity and topological precision by combining **DeepMicroClass (DMC)** probabilistic predictions with **4CAC-style** topological graph propagation. To overcome the inherent limitations of rigid graph filtering, the pipeline integrates a novel biological heuristic—**Plasmid Rescue**—to systematically recover isolated plasmid contigs.
 
-```markdown
-> **Methodology & Authorship Note:** The biological logic (e.g., the *Plasmid Rescue* heuristic), the pipeline architecture, and the HPC/SLURM environment orchestration are my original work. The Python/R scripting and code implementation were developed using AI-assisted programming (LLMs) under my direct logical supervision and validation.
-```
+**Methodology & Authorship Note:** The biological logic (e.g., the *Plasmid Rescue* heuristic), the pipeline architecture, and the HPC/SLURM environment orchestration are my original work. The Python/R scripting and code implementation were developed using AI-assisted programming (LLMs) under my direct logical supervision and validation.
 
 ### 🧠 Core Logic & Current Behavior
 *   **Non-Destructive Thresholding:** Contigs falling below the anchor threshold ("uncertain") are not hard-coded/overwritten with uniform probabilities (0.25). Instead, their original DMC probability vectors are preserved and propagated.
